@@ -125,6 +125,9 @@ CATEGORIAS = {
     "MICR": 0.07,
     "RATO": 0.12,
     "TECL": 0.12,
+    "MEMO": 0.07,
+    "MULT": 0.15,
+    "RED": 0.07,
 }
 
 MARGENES = {
@@ -137,6 +140,9 @@ MARGENES = {
     "MICR": 0.06,
     "RATO": 0.16,
     "TECL": 0.16,
+    "MEMO": 0.08,
+    "MULT": 0.12,
+    "RED": 0.14,
 }
 
 REQUIRED_INPUT_COLS = [
