@@ -90,6 +90,8 @@ def calcular_precio_venta(coste_con_iva: float, familia: str):
     if familia not in CATEGORIAS:
         return None
 
+    margen = MARGENES.get(familia, 0.12)
+
     if familia == "FUEN":
         p_est = (coste_con_iva + TRANSPORTE_CON_IVA) / (1 - 0.08 - margen)
         comision = 0.15 if p_est <= 50 else 0.08
