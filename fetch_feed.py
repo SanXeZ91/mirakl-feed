@@ -2,44 +2,20 @@ import requests
 import os
 import csv
 import io
+import re
 from datetime import datetime
 from collections import Counter
+from decimal import Decimal, InvalidOperation
+
+# Si Mirakl te daba error de formato en canon/tipo-iva, prueba con "." en vez de ","
+DECIMAL_SEPARATOR = ","  # cambia a "." si Mirakl lo exige
 
 def fmt_decimal(x):
-    return f"{float(x):.2f}".replace(".", ",")
-
-URL = os.environ.get("COMPUSPAIN_URL")
-if not URL:
-    raise SystemExit("Error: falta el secret COMPUSPAIN_URL")
-
-# ---- CONFIG ----
-TRANSPORTE_SIN_IVA = 4.50
-IVA_TRANSPORTE = 1.21
-TRANSPORTE_CON_IVA = TRANSPORTE_SIN_IVA * IVA_TRANSPORTE  # 5.445
-MARGEN_SOBRE_VENTA = 0.10
-STOCK_SEGURIDAD = 2
-
-CATEGORIAS = {
-    "CAJA": 0.07,
-    "FUEN": None,  # variable
-    "PB": 0.07,
-    "VIDE": 0.07,
-    "REFR": 0.12,
-    "MONI": 0.07,
-    "MICR": 0.07,
-    "RATO": 0.12,
-    "TECL": 0.12,
-}
-
-REQUIRED_INPUT_COLS = [
-    "ARTPARTNUMBER",
-    "ARTEAN",
-    "ARTSTOCKDISPONIBLE",
-    "ARTFAMILIACODIGO",
-    "ARTIVAREQUIVALENCIA",
-    "ARTRECURSOIMPORTE",
-    "ARTPRECIO_RECURSOPRECIO_IMPUESTOS",
-]
+    try:
+        s = f"{float(x):.2f}"
+    except (ValueError, TypeError):
+        s = "0.00"
+    return s.replace(".", DECIMAL_SEPARATOR) if DECIMAL_SEPARATOR == "," else s
 
 def safe_decode(content: bytes) -> str:
     for enc in ("utf-8-sig", "utf-8", "latin-1"):
@@ -77,6 +53,32 @@ def parse_float(value) -> float:
     except ValueError:
         return 0.0
 
+def normalize_ean(value: str) -> str:
+    """
+    - Si viene tipo 8,43E+12 -> lo convierte a entero sin notación científica
+    - Luego deja solo dígitos
+    """
+    s = ("" if value is None else str(value)).strip()
+    if not s:
+        return ""
+
+    s_no_spaces = s.replace(" ", "")
+
+    # Si viene en notación científica, usar Decimal (más seguro que float)
+    if "e" in s_no_spaces.lower():
+        # si usa coma decimal, la pasamos a punto para Decimal
+        s_norm = s_no_spaces.replace(",", ".")
+        try:
+            as_int = int(Decimal(s_norm))
+            s_no_spaces = str(as_int)
+        except (InvalidOperation, ValueError):
+            # si no se puede convertir, seguimos con el original
+            pass
+
+    # Dejar solo dígitos
+    digits = re.sub(r"\D+", "", s_no_spaces)
+    return digits
+
 def calcular_precio_venta(coste_con_iva: float, familia: str):
     if familia not in CATEGORIAS:
         return None
@@ -93,6 +95,39 @@ def calcular_precio_venta(coste_con_iva: float, familia: str):
 
     p = (coste_con_iva + TRANSPORTE_CON_IVA) / divisor
     return round(p, 2)
+
+URL = os.environ.get("COMPUSPAIN_URL")
+if not URL:
+    raise SystemExit("Error: falta el secret COMPUSPAIN_URL")
+
+# ---- CONFIG ----
+TRANSPORTE_SIN_IVA = 4.50
+IVA_TRANSPORTE = 1.21
+TRANSPORTE_CON_IVA = TRANSPORTE_SIN_IVA * IVA_TRANSPORTE  # 5.445
+MARGEN_SOBRE_VENTA = 0.10
+STOCK_SEGURIDAD = 2
+
+CATEGORIAS = {
+    "CAJA": 0.07,
+    "FUEN": None,  # variable
+    "PB": 0.07,
+    "VIDE": 0.07,
+    "REFR": 0.12,
+    "MONI": 0.07,
+    "MICR": 0.07,
+    "RATO": 0.12,
+    "TECL": 0.12,
+}
+
+REQUIRED_INPUT_COLS = [
+    "ARTPARTNUMBER",
+    "ARTEAN",
+    "ARTSTOCKDISPONIBLE",
+    "ARTFAMILIACODIGO",
+    "ARTIVAREQUIVALENCIA",
+    "ARTRECURSOIMPORTE",
+    "ARTPRECIO_RECURSOPRECIO_IMPUESTOS",
+]
 
 print(f"[{datetime.now()}] Descargando feed...")
 resp = requests.get(URL, timeout=60)
@@ -126,11 +161,10 @@ for row in reader:
         continue
 
     sku = (row.get("ARTPARTNUMBER") or "").strip()
-    ean = (row.get("ARTEAN") or "").strip()
-    try:
-        ean = str(int(float(ean_raw)))
-    except (ValueError, TypeError):
-        ean = ean_raw
+
+    ean_raw = (row.get("ARTEAN") or "").strip()
+    ean = normalize_ean(ean_raw)
+
     if not sku or not ean:
         errors += 1
         continue
@@ -180,7 +214,7 @@ writer = csv.DictWriter(output, fieldnames=out_fieldnames, delimiter=";")
 writer.writeheader()
 writer.writerows(out_rows)
 
-with open("feed.csv", "w", encoding="utf-8") as f:
+with open("feed.csv", "w", encoding="utf-8", newline="") as f:
     f.write(output.getvalue())
 
 print(f"[OK] feed.csv escrito correctamente con {len(out_rows)} ofertas.")
