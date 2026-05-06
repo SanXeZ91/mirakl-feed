@@ -20,7 +20,7 @@ def fmt_precio(x):
 def fmt_decimal(x):
     """Para canon y tipo-iva: usa punto decimal"""
     try:
-        return f"{float(x):.2f}"
+        return f"{float(x):.2f}".replace(",", ".")
     except (ValueError, TypeError):
         return "0.00"
 
