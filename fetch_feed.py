@@ -10,12 +10,19 @@ from decimal import Decimal, InvalidOperation
 # Si Mirakl te daba error de formato en canon/tipo-iva, prueba con "." en vez de ","
 DECIMAL_SEPARATOR = ","  # cambia a "." si Mirakl lo exige
 
-def fmt_decimal(x):
+def fmt_precio(x):
+    """Para price: usa coma decimal"""
     try:
-        s = f"{float(x):.2f}"
+        return f"{float(x):.2f}".replace(".", ",")
     except (ValueError, TypeError):
-        s = "0.00"
-    return s.replace(".", DECIMAL_SEPARATOR) if DECIMAL_SEPARATOR == "," else s
+        return "0,00"
+
+def fmt_decimal(x):
+    """Para canon y tipo-iva: usa punto decimal"""
+    try:
+        return f"{float(x):.2f}"
+    except (ValueError, TypeError):
+        return "0.00"
 
 def safe_decode(content: bytes) -> str:
     for enc in ("utf-8-sig", "utf-8", "latin-1"):
@@ -185,7 +192,7 @@ for row in reader:
         "sku": sku,
         "product-id": ean,
         "product-id-type": "EAN",
-        "price": fmt_decimal(price),
+        "price": fmt_precio(price),
         "quantity": quantity,
         "state": "Nuevo",
         "discount-price": "",
