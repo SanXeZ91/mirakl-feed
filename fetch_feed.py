@@ -194,7 +194,7 @@ for row in reader:
         "product-id-type": "EAN",
         "price": fmt_precio(price),
         "quantity": quantity,
-        "state": "Nuevo",
+        "state": "11",
         "discount-price": "",
         "discount-start-date": "",
         "discount-end-date": "",
