@@ -8,9 +8,6 @@ from collections import Counter
 def fmt_decimal(x):
     return f"{float(x):.2f}".replace(".", ",")
 
-def fmt_entero_con_coma(x):
-    return f"{int(float(x))},"
-
 URL = os.environ.get("COMPUSPAIN_URL")
 if not URL:
     raise SystemExit("Error: falta el secret COMPUSPAIN_URL")
@@ -157,8 +154,8 @@ for row in reader:
         "discount-start-date": "",
         "discount-end-date": "",
         "update-delete": "update",
-        "canon": fmt_entero_con_coma(canon),
-        "tipo-iva": fmt_entero_con_coma(tipo_iva),
+        "canon": fmt_decimal(canon),
+        "tipo-iva": fmt_decimal(tipo_iva),
     })
 
 print(f"[INFO] Filas totales leídas: {total}")
