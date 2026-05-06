@@ -7,7 +7,10 @@ from collections import Counter
 
 def fmt_decimal(x):
     return f"{float(x):.2f}".replace(".", ",")
-    
+
+def fmt_entero_con_coma(x):
+    return f"{int(float(x))},"
+
 URL = os.environ.get("COMPUSPAIN_URL")
 if not URL:
     raise SystemExit("Error: falta el secret COMPUSPAIN_URL")
@@ -55,7 +58,6 @@ def sniff_delimiter(text: str) -> str:
         dialect = csv.Sniffer().sniff(sample, delimiters="\t;,")
         return dialect.delimiter
     except Exception:
-        # fallback: contar ocurrencias en la cabecera
         header = (text.splitlines()[0] if text.splitlines() else "")
         counts = {d: header.count(d) for d in ["\t", ";", ","]}
         return max(counts, key=counts.get) if counts else "\t"
@@ -73,14 +75,16 @@ def parse_float(value) -> float:
     s = ("" if value is None else str(value)).strip().replace(",", ".")
     if s == "":
         return 0.0
-    return float(s)
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
 
-def calcular_precio_venta(coste_con_iva: float, familia: str) -> float | None:
+def calcular_precio_venta(coste_con_iva: float, familia: str):
     if familia not in CATEGORIAS:
         return None
 
     if familia == "FUEN":
-        # Estimación con 8% para decidir umbral 50€
         p_est = (coste_con_iva + TRANSPORTE_CON_IVA) / (1 - 0.08 - MARGEN_SOBRE_VENTA)
         comision = 0.15 if p_est <= 50 else 0.08
     else:
@@ -107,7 +111,7 @@ fieldnames_in = reader.fieldnames or []
 missing = [c for c in REQUIRED_INPUT_COLS if c not in fieldnames_in]
 print(f"[INFO] Columnas detectadas ({len(fieldnames_in)}): {fieldnames_in}")
 if missing:
-    raise SystemExit(f"[ERROR] Faltan columnas esperadas: {missing}. Revisa el delimitador/CSV origen.")
+    raise SystemExit(f"[ERROR] Faltan columnas esperadas: {missing}")
 
 out_rows = []
 familias_counter = Counter()
@@ -132,6 +136,8 @@ for row in reader:
 
     stock = parse_int(row.get("ARTSTOCKDISPONIBLE"))
     coste = parse_float(row.get("ARTPRECIO_RECURSOPRECIO_IMPUESTOS"))
+    canon = parse_float(row.get("ARTRECURSOIMPORTE"))
+    tipo_iva = parse_float(row.get("ARTIVAREQUIVALENCIA"))
 
     price = calcular_precio_venta(coste, familia)
     if price is None:
@@ -139,9 +145,6 @@ for row in reader:
         continue
 
     quantity = max(0, stock - STOCK_SEGURIDAD)
-
-    canon = (row.get("ARTRECURSOIMPORTE") or "").strip()
-    tipo_iva = (row.get("ARTIVAREQUIVALENCIA") or "").strip()
 
     out_rows.append({
         "sku": sku,
@@ -154,17 +157,16 @@ for row in reader:
         "discount-start-date": "",
         "discount-end-date": "",
         "update-delete": "update",
-        "canon": canon,
-        "tipo-iva": tipo_iva,
+        "canon": fmt_entero_con_coma(canon),
+        "tipo-iva": fmt_entero_con_coma(tipo_iva),
     })
 
 print(f"[INFO] Filas totales leídas: {total}")
 print(f"[INFO] Top familias (20): {familias_counter.most_common(20)}")
 print(f"[INFO] Incluidas: {len(out_rows)} | Omitidas (cat): {skipped_cat} | Errores: {errors}")
 
-# Si sale vacío, mejor fallar para no publicar un feed inútil
 if len(out_rows) == 0:
-    raise SystemExit("[ERROR] feed.csv generado sin productos. Revisa códigos ARTFAMILIACODIGO o comisión/filtros.")
+    raise SystemExit("[ERROR] feed.csv generado sin productos. Revisa códigos ARTFAMILIACODIGO.")
 
 out_fieldnames = [
     "sku", "product-id", "product-id-type", "price", "quantity", "state",
@@ -180,4 +182,4 @@ writer.writerows(out_rows)
 with open("feed.csv", "w", encoding="utf-8") as f:
     f.write(output.getvalue())
 
-print("[OK] feed.csv escrito correctamente.")
+print(f"[OK] feed.csv escrito correctamente con {len(out_rows)} ofertas.")
