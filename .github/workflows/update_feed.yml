@@ -3,7 +3,7 @@ name: Update Feed
 on:
   schedule:
     - cron: '0 * * * *'   # Se ejecuta cada hora
-  workflow_dispatch:        # Permite ejecutarlo manualmente también
+  workflow_dispatch:      # Permite ejecutarlo manualmente
 
 jobs:
   update:
@@ -24,6 +24,8 @@ jobs:
         run: pip install requests
 
       - name: Run fetch script
+        env:
+          COMPUSPAIN_URL: ${{ secrets.COMPUSPAIN_URL }}
         run: python fetch_feed.py
 
       - name: Commit and push feed
