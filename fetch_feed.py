@@ -9,14 +9,14 @@ if not URL:
     print("Error: No se ha encontrado la URL en los Secrets")
     exit(1)
 
+print(f"Descargando feed desde el distribuidor... {datetime.now()}")
+
 response = requests.get(URL, timeout=30)
 response.raise_for_status()
 
-# Crea la carpeta public si no existe
-os.makedirs("public", exist_ok=True)
-
-# Guarda el archivo
-with open("public/feed.csv", "w", encoding="utf-8") as f:
+# Guarda el archivo en la RAÍZ (sin carpeta public)
+with open("feed.csv", "w", encoding="utf-8") as f:
     f.write(response.text)
 
-print(f"Feed actualizado con éxito: {datetime.now()}")
+print(f"✅ Feed actualizado con éxito: {datetime.now()}")
+print(f"Tamaño del archivo: {len(response.text)} caracteres")
