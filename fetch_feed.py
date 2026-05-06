@@ -91,12 +91,12 @@ def calcular_precio_venta(coste_con_iva: float, familia: str):
         return None
 
     if familia == "FUEN":
-        p_est = (coste_con_iva + TRANSPORTE_CON_IVA) / (1 - 0.08 - MARGEN_SOBRE_VENTA)
+        p_est = (coste_con_iva + TRANSPORTE_CON_IVA) / (1 - 0.08 - margen)
         comision = 0.15 if p_est <= 50 else 0.08
     else:
         comision = CATEGORIAS[familia]
 
-    divisor = 1 - comision - MARGEN_SOBRE_VENTA
+    divisor = 1 - comision - margen
     if divisor <= 0:
         return None
 
@@ -111,7 +111,6 @@ if not URL:
 TRANSPORTE_SIN_IVA = 4.50
 IVA_TRANSPORTE = 1.21
 TRANSPORTE_CON_IVA = TRANSPORTE_SIN_IVA * IVA_TRANSPORTE  # 5.445
-MARGEN_SOBRE_VENTA = 0.10
 STOCK_SEGURIDAD = 2
 
 CATEGORIAS = {
@@ -124,6 +123,18 @@ CATEGORIAS = {
     "MICR": 0.07,
     "RATO": 0.12,
     "TECL": 0.12,
+}
+
+MARGENES = {
+    "CAJA": 0.15,
+    "FUEN": 0.12,
+    "PB": 0.10,
+    "VIDE": 0.10,
+    "REFR": 0.15,
+    "MONI": 0.10,
+    "MICR": 0.10,
+    "RATO": 0.18,
+    "TECL": 0.18,
 }
 
 REQUIRED_INPUT_COLS = [
