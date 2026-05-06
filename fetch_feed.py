@@ -5,6 +5,9 @@ import io
 from datetime import datetime
 from collections import Counter
 
+def fmt_decimal(x):
+    return f"{float(x):.2f}".replace(".", ",")
+    
 URL = os.environ.get("COMPUSPAIN_URL")
 if not URL:
     raise SystemExit("Error: falta el secret COMPUSPAIN_URL")
@@ -144,7 +147,7 @@ for row in reader:
         "sku": sku,
         "product-id": ean,
         "product-id-type": "EAN",
-        "price": price,
+        "price": fmt_decimal(price),
         "quantity": quantity,
         "state": "Nuevo",
         "discount-price": "",
