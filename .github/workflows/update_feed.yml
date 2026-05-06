@@ -32,6 +32,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add public/feed.csv
+          git add feed.csv
           git diff --cached --quiet || git commit -m "Update feed $(date -u)"
           git push
