@@ -195,9 +195,6 @@ for row in reader:
         "price": fmt_precio(price),
         "quantity": quantity,
         "state": "11",
-        "discount-price": "",
-        "discount-start-date": "",
-        "discount-end-date": "",
         "update-delete": "update",
         "canon": fmt_decimal(canon),
         "tipo-iva": fmt_decimal(tipo_iva),
@@ -212,7 +209,6 @@ if len(out_rows) == 0:
 
 out_fieldnames = [
     "sku", "product-id", "product-id-type", "price", "quantity", "state",
-    "discount-price", "discount-start-date", "discount-end-date",
     "update-delete", "canon", "tipo-iva"
 ]
 
