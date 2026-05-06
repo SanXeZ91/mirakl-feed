@@ -126,7 +126,11 @@ for row in reader:
         continue
 
     sku = (row.get("ARTPARTNUMBER") or "").strip()
-    ean = (row.get("ARTEAN") or "").strip()
+    ean_raw = (row.get("ARTEAN") or "").strip()
+try:
+    ean = str(int(float(ean_raw)))
+except (ValueError, TypeError):
+    ean = ean_raw
     if not sku or not ean:
         errors += 1
         continue
