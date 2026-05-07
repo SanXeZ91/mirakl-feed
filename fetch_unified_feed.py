@@ -33,25 +33,12 @@ MARGENES = {
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
 MAPE_DMI = {
-    # PLACAS BASE
     "Placas base": "PB",
-
-    # TARJETAS GRÁFICAS
     "Tarjetas": "VIDE",
-
-    # REFRIGERACIÓN
     "Refrigeración": "REFR",
-
-    # PROCESADORES
     "Procesadores": "MICR",
-
-    # PERIFÉRICOS (ratones, teclados, etc.)
     "Periféricos": "RATO",
-
-    # MEMORIA RAM
     "Memoria RAM": "MEMO",
-
-    # RED
     "Routers y Modems": "RED",
     "Repetidores y extensores": "RED",
     "Switches y Transceptores": "RED",
@@ -102,15 +89,13 @@ def get_dmi_data():
 
     try:
         r = requests.post(auth_url, json=creds, headers=headers, timeout=30)
-        print(f"ℹ️ [DMI] Status autenticación: {r.status_code}")
-        
         auth_json = r.json()
         token = auth_json.get("token")
-        
+
         if not token:
             print(f"❌ [DMI] No se obtuvo token. Respuesta: {str(auth_json)[:300]}")
             return ""
-        
+
         print(f"✅ [DMI] Token obtenido correctamente.")
 
         print("📥 [DMI] Descargando catálogo...")
@@ -118,14 +103,8 @@ def get_dmi_data():
         payload = {
             "FileFormat": "csv",
             "Columns": [
-                "ProductId",
-                "ManufacturerCode",
-                "Ean",
-                "Category",
-                "Manufacturer",
-                "Name",
-                "Stock",
-                "PriceOnly"
+                "ProductId", "ManufacturerCode", "Ean", "Category",
+                "Manufacturer", "Name", "Stock", "PriceOnly"
             ],
             "Encoding": "UTF-8",
             "Separator": ";",
@@ -156,13 +135,11 @@ def get_dmi_data():
         }
 
         r_cat = requests.post(catalog_url, json=payload, headers=catalog_headers, timeout=120)
-        print(f"ℹ️ [DMI] Status catálogo: {r_cat.status_code}")
 
         if r_cat.status_code != 200:
-            print(f"❌ [DMI] Error catálogo: {r_cat.text[:300]}")
+            print(f"❌ [DMI] Error catálogo (status {r_cat.status_code}): {r_cat.text[:300]}")
             return ""
 
-        # IMPORTANTE: decodificar con utf-8-sig para evitar caracteres raros (Ã³, Ã­, etc.)
         return r_cat.content.decode("utf-8-sig")
 
     except Exception as e:
@@ -200,7 +177,6 @@ if compu_url:
             coste = float(coste_str)
             stock = int(float(row.get("ARTSTOCKDISPONIBLE") or 0))
             pvp = calcular_pvp(coste, COMPU_PROMO_ENVIO, familia)
-
             if pvp:
                 qty = max(stock - 2, 0)
                 ofertas_finales[ean] = {
@@ -228,35 +204,13 @@ dmi_skipped_parse = 0
 dmi_added_or_updated = 0
 
 dmi_text = get_dmi_data()
-print(f"ℹ️ [DMI] Longitud respuesta (chars): {len(dmi_text) if dmi_text else 0}")
-
-if dmi_text:
-    lines = dmi_text.splitlines()
-    print(f"ℹ️ [DMI] Nº líneas: {len(lines)}")
-    if lines:
-        print(f"ℹ️ [DMI] Primera línea (cabecera): {lines[0][:200]}")
-        if len(lines) > 1:
-            print(f"ℹ️ [DMI] Segunda línea (primer producto): {lines[1][:200]}")
 
 if dmi_text and len(dmi_text) > 100:
     first_line = dmi_text.split('\n')[0]
     dmi_delimiter = ";" if ";" in first_line else ","
-    print(f"ℹ️ [DMI] Delimitador detectado: '{dmi_delimiter}'")
 
-    # Convertimos a lista para poder iterar dos veces (debug + proceso)
     rows_dmi = list(csv.DictReader(io.StringIO(dmi_text), delimiter=dmi_delimiter))
 
-    # DEBUG: categorías únicas
-    categorias_dmi = set()
-    for row in rows_dmi:
-        cat = row.get("Categoría") or row.get("Category") or ""
-        if cat:
-            categorias_dmi.add(cat.strip())
-    print(f"ℹ️ [DMI] Categorías únicas encontradas ({len(categorias_dmi)}):")
-    for cat in sorted(categorias_dmi):
-        print(f"   - {cat}")
-
-    # PROCESO PRINCIPAL DMI
     for row in rows_dmi:
         dmi_total += 1
 
