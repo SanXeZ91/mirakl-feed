@@ -255,36 +255,29 @@ if dmi_text and len(dmi_text) > 100:
                     }
                     dmi_added_or_updated += 1
                 else:
-                    existing = ofertas_finales[ean]
-                    existing_qty = int(existing.get("stock", 0))
+    existing = ofertas_finales[ean]
+    existing_qty = int(existing.get("stock", 0))
 
-                    if qty == 0 and existing_qty > 0:
-                        continue
+    # Si DMI no tiene stock, no tocar lo que ya hay
+    if qty == 0:
+        continue
 
-                    if existing_qty == 0 and qty > 0:
-                        ofertas_finales[ean] = {
-                            "sku": row.get("PN"),
-                            "ean": ean,
-                            "precio": pvp,
-                            "stock": qty,
-                            "canon": "0.00",
-                            "iva": "21.00",
-                            "origen": "DMI"
-                        }
-                        dmi_added_or_updated += 1
-                        continue
+    # Si DMI tiene stock y CompuSpain no, DMI gana
+    if existing_qty == 0:
+        ofertas_finales[ean] = {
+            "sku": row.get("PN"), "ean": ean, "precio": pvp,
+            "stock": qty, "canon": "0.00", "iva": "21.00", "origen": "DMI"
+        }
+        dmi_added_or_updated += 1
+        continue
 
-                    if pvp < float(existing.get("precio", 1e18)):
-                        ofertas_finales[ean] = {
-                            "sku": row.get("PN"),
-                            "ean": ean,
-                            "precio": pvp,
-                            "stock": qty,
-                            "canon": "0.00",
-                            "iva": "21.00",
-                            "origen": "DMI"
-                        }
-                        dmi_added_or_updated += 1
+    # Ambos tienen stock → gana el más barato
+    if pvp < float(existing.get("precio", 1e18)):
+        ofertas_finales[ean] = {
+            "sku": row.get("PN"), "ean": ean, "precio": pvp,
+            "stock": qty, "canon": "0.00", "iva": "21.00", "origen": "DMI"
+        }
+        dmi_added_or_updated += 1
         except Exception as e:
             dmi_skipped_parse += 1
             continue
