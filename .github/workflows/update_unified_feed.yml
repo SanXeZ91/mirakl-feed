@@ -3,7 +3,7 @@ name: Run Unified Feed
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "0 * * * *"
 permissions:
   contents: write
 
