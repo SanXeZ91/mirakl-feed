@@ -94,7 +94,6 @@ def get_dmi_data():
             "Columns": ["PN", "Ean", "Category", "Stock", "PriceOnly"],
             "Separator": ";",
             "ReturnFileDirectly": True,
-            "PageSize": 9999
         }
         headers["Authorization"] = f"Bearer {token}"
         r_cat = requests.post(catalog_url, json=payload, headers=headers, timeout=60)
