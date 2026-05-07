@@ -107,35 +107,50 @@ ofertas_finales = {}
 
 # 1. PROCESAR COMPUSPAIN
 print("📡 [COMPUSPAIN] Descargando y procesando...")
+compu_total = 0
+compu_skipped_no_ean = 0
+compu_skipped_no_family = 0
+compu_skipped_parse = 0
+compu_added = 0
+
 compu_url = os.environ.get("COMPUSPAIN_URL")
 if compu_url:
     r = requests.get(compu_url, timeout=60)
-    # Detectamos delimitador (por si acaso)
     delimiter = ";" if ";" in r.text.split("\n")[0] else ","
     reader = csv.DictReader(io.StringIO(r.text), delimiter=delimiter)
     for row in reader:
+        compu_total += 1
         ean = normalize_ean(row.get("ARTEAN"))
+        if not ean:
+            compu_skipped_no_ean += 1
+            continue
         familia = (row.get("ARTFAMILIACODIGO") or "").strip().upper()
-        if ean and familia in CATEGORIAS:
-            try:
-                coste_str = row.get("ARTPRECIO_RECURSOPRECIO_IMPUESTOS", "0").replace(",", ".")
-                coste = float(coste_str)
-                stock = int(float(row.get("ARTSTOCKDISPONIBLE") or 0))
-                pvp = calcular_pvp(coste, COMPU_PROMO_ENVIO, familia)
+        if familia not in CATEGORIAS:
+            compu_skipped_no_family += 1
+            continue
+        try:
+            coste_str = row.get("ARTPRECIO_RECURSOPRECIO_IMPUESTOS", "0").replace(",", ".")
+            coste = float(coste_str)
+            stock = int(float(row.get("ARTSTOCKDISPONIBLE") or 0))
+            pvp = calcular_pvp(coste, COMPU_PROMO_ENVIO, familia)
 
-                if pvp:
-                    qty = max(stock - 2, 0)
-                    ofertas_finales[ean] = {
-                        "sku": row.get("ARTPARTNUMBER"),
-                        "ean": ean,
-                        "precio": pvp,
-                        "stock": qty,
-                        "canon": row.get("ARTRECURSOIMPORTE", "0"),
-                        "iva": row.get("ARTIVAREQUIVALENCIA", "21"),
-                        "origen": "CompuSpain"
-                    }
-            except:
-                continue
+            if pvp:
+                qty = max(stock - 2, 0)
+                ofertas_finales[ean] = {
+                    "sku": row.get("ARTPARTNUMBER"),
+                    "ean": ean,
+                    "precio": pvp,
+                    "stock": qty,
+                    "canon": row.get("ARTRECURSOIMPORTE", "0"),
+                    "iva": row.get("ARTIVAREQUIVALENCIA", "21"),
+                    "origen": "CompuSpain"
+                }
+                compu_added += 1
+        except:
+            compu_skipped_parse += 1
+            continue
+
+print(f"[COMPUSPAIN] Total filas: {compu_total} | Añadidas: {compu_added} | Sin EAN: {compu_skipped_no_ean} | Familia no válida: {compu_skipped_no_family} | Error parse: {compu_skipped_parse}")
 
 # 2. PROCESAR DMI (Y COMPARAR)
 dmi_text = get_dmi_data()
