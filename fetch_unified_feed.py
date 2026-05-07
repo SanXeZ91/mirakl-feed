@@ -229,6 +229,17 @@ if dmi_text and len(dmi_text) > 100: # Verificamos que hay contenido
     dmi_delimiter = ";" if ";" in first_line else ","
     print(f"ℹ️ [DMI] Delimitador detectado: '{dmi_delimiter}'")
 
+    # DEBUG: ver categorías únicas de DMI
+reader_debug = csv.DictReader(io.StringIO(dmi_text), delimiter=dmi_delimiter)
+categorias_dmi = set()
+for row in reader_debug:
+    cat = row.get("Categoría") or row.get("Category") or ""
+    if cat:
+        categorias_dmi.add(cat.strip())
+print(f"ℹ️ [DMI] Categorías únicas encontradas ({len(categorias_dmi)}):")
+for cat in sorted(categorias_dmi):
+    print(f"   - {cat}")
+
     reader = csv.DictReader(io.StringIO(dmi_text), delimiter=dmi_delimiter)
     for row in reader:
         dmi_total += 1
