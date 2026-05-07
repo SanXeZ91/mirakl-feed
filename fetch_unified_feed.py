@@ -32,13 +32,12 @@ MARGENES = {
 }
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
-# DMI solo entrará en estas categorías. El resto solo las servirá Compuspain.
 MAPE_DMI = {
     "Placas base": "PB",
     "Tarjetas": "VIDE",
     "Refrigeración": "REFR",
     "Procesadores": "MICR",
-    "Periféricos": "RATO", # Aplica margen de RATO/TECL (16%)
+    "Periféricos": "RATO",
     "Memoria RAM": "MEMO",
     "Routers y Modems": "RED"
 }
@@ -63,11 +62,9 @@ def calcular_pvp(coste_con_iva, transporte_con_iva, familia):
     if familia not in CATEGORIAS:
         return None
     comision = CATEGORIAS[familia]
-    # Caso especial FUEN si lo tenías dinámico, si no, usa el de CATEGORIAS
     if familia == "FUEN" and comision is None:
         p_est = (coste_con_iva + transporte_con_iva) / (1 - 0.08 - MARGENES["FUEN"])
         comision = 0.15 if p_est <= 50 else 0.08
-    
     margen = MARGENES[familia]
     divisor = 1 - comision - margen
     if divisor <= 0: return None
@@ -136,7 +133,6 @@ def get_dmi_data():
             "Language": "es"
         }
 
-        # IMPORTANTE: x-api-key también en la llamada al catálogo
         catalog_headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token}",
@@ -150,13 +146,15 @@ def get_dmi_data():
             print(f"❌ [DMI] Error catálogo: {r_cat.text[:300]}")
             return ""
 
-        return r_cat.text
+        # IMPORTANTE: decodificar con utf-8-sig para evitar caracteres raros (Ã³, Ã­, etc.)
+        return r_cat.content.decode("utf-8-sig")
+
     except Exception as e:
         print(f"❌ [ERROR DMI] {e}")
         return ""
-        
+
 # ---- PROCESAMIENTO PRINCIPAL ----
-ofertas_finales = {} 
+ofertas_finales = {}
 
 # 1. PROCESAR COMPUSPAIN
 print("📡 [COMPUSPAIN] Descargando y procesando...")
@@ -215,6 +213,7 @@ dmi_added_or_updated = 0
 
 dmi_text = get_dmi_data()
 print(f"ℹ️ [DMI] Longitud respuesta (chars): {len(dmi_text) if dmi_text else 0}")
+
 if dmi_text:
     lines = dmi_text.splitlines()
     print(f"ℹ️ [DMI] Nº líneas: {len(lines)}")
@@ -222,54 +221,50 @@ if dmi_text:
         print(f"ℹ️ [DMI] Primera línea (cabecera): {lines[0][:200]}")
         if len(lines) > 1:
             print(f"ℹ️ [DMI] Segunda línea (primer producto): {lines[1][:200]}")
-            
-if dmi_text and len(dmi_text) > 100: # Verificamos que hay contenido
-    # DETECCION AUTOMATICA DE DELIMITADOR (DMI suele usar ";" pero a veces ",")
+
+if dmi_text and len(dmi_text) > 100:
     first_line = dmi_text.split('\n')[0]
     dmi_delimiter = ";" if ";" in first_line else ","
     print(f"ℹ️ [DMI] Delimitador detectado: '{dmi_delimiter}'")
 
-    # DEBUG: ver categorías únicas de DMI
-reader_debug = csv.DictReader(io.StringIO(dmi_text), delimiter=dmi_delimiter)
-categorias_dmi = set()
-for row in reader_debug:
-    cat = row.get("Categoría") or row.get("Category") or ""
-    if cat:
-        categorias_dmi.add(cat.strip())
-print(f"ℹ️ [DMI] Categorías únicas encontradas ({len(categorias_dmi)}):")
-for cat in sorted(categorias_dmi):
-    print(f"   - {cat}")
+    # Convertimos a lista para poder iterar dos veces (debug + proceso)
+    rows_dmi = list(csv.DictReader(io.StringIO(dmi_text), delimiter=dmi_delimiter))
 
-    reader = csv.DictReader(io.StringIO(dmi_text), delimiter=dmi_delimiter)
-    for row in reader:
+    # DEBUG: categorías únicas
+    categorias_dmi = set()
+    for row in rows_dmi:
+        cat = row.get("Categoría") or row.get("Category") or ""
+        if cat:
+            categorias_dmi.add(cat.strip())
+    print(f"ℹ️ [DMI] Categorías únicas encontradas ({len(categorias_dmi)}):")
+    for cat in sorted(categorias_dmi):
+        print(f"   - {cat}")
+
+    # PROCESO PRINCIPAL DMI
+    for row in rows_dmi:
         dmi_total += 1
-        
-        # DMI puede usar 'EAN' o 'Ean', probamos ambos
+
         ean_raw = row.get("EAN") or row.get("Ean")
         ean = normalize_ean(ean_raw)
-        
+
         if not ean:
             dmi_skipped_no_ean += 1
             continue
 
-        # DMI puede usar 'Categoría' o 'Category'
         cat_dmi = row.get("Categoría") or row.get("Category")
         familia = MAPE_DMI.get(cat_dmi)
-        
+
         if not familia:
             dmi_skipped_no_category += 1
             continue
 
         try:
-            # DMI puede usar 'Precio' o 'PriceOnly'
             precio_raw = row.get("Precio") or row.get("PriceOnly") or "0"
             coste_sin_iva = float(str(precio_raw).replace(",", "."))
-            
-            # DMI puede usar 'Stock Disponible' o 'Stock'
+
             stock_raw = row.get("Stock Disponible") or row.get("Stock") or "0"
             stock = int(float(str(stock_raw).replace(",", ".")))
 
-            # Transporte DMI
             envio_con_iva = 0 if coste_sin_iva >= 100 else DMI_ENVIO_BASE
             transporte_total = envio_con_iva + DMI_GESTION_FIJA
 
