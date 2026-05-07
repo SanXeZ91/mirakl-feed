@@ -93,10 +93,12 @@ def get_dmi_data():
             "FileFormat": "csv",
             "Columns": ["PN", "Ean", "Category", "Stock", "PriceOnly"],
             "Separator": ";",
-            "ReturnFileDirectly": True
+            "ReturnFileDirectly": True,
+            "PageSize": 9999
         }
         headers["Authorization"] = f"Bearer {token}"
         r_cat = requests.post(catalog_url, json=payload, headers=headers, timeout=60)
+        print(f"ℹ️ [DMI] Status catálogo: {r_cat.status_code}")
         return r_cat.text
     except Exception as e:
         print(f"❌ [ERROR DMI] {e}")
