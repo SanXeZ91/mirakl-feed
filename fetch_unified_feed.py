@@ -18,29 +18,27 @@ COMPU_PROMO_ENVIO = 4.50 * IVA_FACTOR # 5.445€ con IVA
 DMI_ENVIO_BASE = 4.95 * IVA_FACTOR
 DMI_GESTION_FIJA = 0.99 * IVA_FACTOR
 
-# ---- CATEGORÍAS Y MÁRGENES (Base unificada) ----
+# ---- CATEGORÍAS Y MÁRGENES (Base unificada para ambos) ----
 CATEGORIAS = {
     "CAJA": 0.07, "FUEN": 0.08, "PB": 0.07, "VIDE": 0.07,
     "REFR": 0.12, "MONI": 0.07, "MICR": 0.07, "RATO": 0.12,
-    "TECL": 0.12, "MEMO": 0.07, "RED": 0.07
+    "TECL": 0.12, "MEMO": 0.07, "MULT": 0.07, "RED": 0.07
 }
 
 MARGENES = {
     "CAJA": 0.12, "FUEN": 0.10, "PB": 0.08, "VIDE": 0.08,
     "REFR": 0.12, "MONI": 0.10, "MICR": 0.06, "RATO": 0.16,
-    "TECL": 0.16, "MEMO": 0.10, "RED": 0.12
+    "TECL": 0.16, "MEMO": 0.10, "MULT": 0.12, "RED": 0.12
 }
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
-# Según me has dicho: 
-# PB -> Placas base, VIDE -> Tarjetas, REFR -> Refrigeración, 
-# MICR -> Procesadores, RATO/TECL -> Periféricos, MEMO -> Memoria RAM, RED -> Routers y Modems
+# DMI solo entrará en estas categorías. El resto solo las servirá Compuspain.
 MAPE_DMI = {
     "Placas base": "PB",
     "Tarjetas": "VIDE",
     "Refrigeración": "REFR",
     "Procesadores": "MICR",
-    "Periféricos": "RATO", 
+    "Periféricos": "RATO", # Aplica margen de RATO/TECL (16%)
     "Memoria RAM": "MEMO",
     "Routers y Modems": "RED"
 }
