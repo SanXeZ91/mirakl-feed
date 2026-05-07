@@ -153,33 +153,63 @@ if compu_url:
 print(f"[COMPUSPAIN] Total filas: {compu_total} | Añadidas: {compu_added} | Sin EAN: {compu_skipped_no_ean} | Familia no válida: {compu_skipped_no_family} | Error parse: {compu_skipped_parse}")
 
 # 2. PROCESAR DMI (Y COMPARAR)
+print("📡 [DMI] Descargando y procesando...")
+dmi_total = 0
+dmi_skipped_no_ean = 0
+dmi_skipped_no_category = 0
+dmi_skipped_parse = 0
+dmi_added_or_updated = 0
+
 dmi_text = get_dmi_data()
 if dmi_text:
     reader = csv.DictReader(io.StringIO(dmi_text), delimiter=";")
     for row in reader:
+        dmi_total += 1
         ean = normalize_ean(row.get("EAN"))
+        if not ean:
+            dmi_skipped_no_ean += 1
+            continue
+
         cat_dmi = row.get("Categoría")
         familia = MAPE_DMI.get(cat_dmi)
+        if not familia:
+            dmi_skipped_no_category += 1
+            continue
 
-        if ean and familia:
-            try:
-                coste_sin_iva = float(row.get("Precio", "0").replace(",", "."))
-                stock = int(float(row.get("Stock Disponible") or 0))
+        try:
+            coste_sin_iva = float(row.get("Precio", "0").replace(",", "."))
+            stock = int(float(row.get("Stock Disponible") or 0))
 
-                # Cálculo transporte DMI:
-                # - envío 4,95€ + IVA si coste < 100€
-                # - envío gratis si coste >= 100€
-                # - gestión fija 0,99€ + IVA siempre
-                envio_con_iva = 0 if coste_sin_iva >= 100 else DMI_ENVIO_BASE
-                transporte_total = envio_con_iva + DMI_GESTION_FIJA
+            # Transporte DMI (según tu lógica actual)
+            envio_con_iva = 0 if coste_sin_iva >= 100 else DMI_ENVIO_BASE
+            transporte_total = envio_con_iva + DMI_GESTION_FIJA
 
-                pvp = calcular_pvp(coste_sin_iva * IVA_FACTOR, transporte_total, familia)
+            pvp = calcular_pvp(coste_sin_iva * IVA_FACTOR, transporte_total, familia)
 
-                if pvp:
-                    qty = max(stock - 2, 0)
+            if pvp:
+                qty = max(stock - 2, 0)
 
-                    if ean not in ofertas_finales:
-                        # No existe aún: guardamos DMI (aunque qty sea 0, para no perder referencias)
+                if ean not in ofertas_finales:
+                    ofertas_finales[ean] = {
+                        "sku": row.get("PN"),
+                        "ean": ean,
+                        "precio": pvp,
+                        "stock": qty,
+                        "canon": "0.00",
+                        "iva": "21.00",
+                        "origen": "DMI"
+                    }
+                    dmi_added_or_updated += 1
+                else:
+                    existing = ofertas_finales[ean]
+                    existing_qty = int(existing.get("stock", 0))
+
+                    # Si DMI queda a 0 y el existente tiene stock>0 -> NO sustituir
+                    if qty == 0 and existing_qty > 0:
+                        continue
+
+                    # Si el existente tiene 0 y DMI tiene stock>0 -> sustituir (aunque sea más caro)
+                    if existing_qty == 0 and qty > 0:
                         ofertas_finales[ean] = {
                             "sku": row.get("PN"),
                             "ean": ean,
@@ -189,42 +219,27 @@ if dmi_text:
                             "iva": "21.00",
                             "origen": "DMI"
                         }
-                    else:
-                        existing = ofertas_finales[ean]
-                        existing_qty = int(existing.get("stock", 0))
+                        dmi_added_or_updated += 1
+                        continue
 
-                        # Regla para NO perder ventas:
-                        # - Si DMI queda con qty=0 y el existente tiene stock>0 -> NO sustituir
-                        if qty == 0 and existing_qty > 0:
-                            continue
+                    # Si ambos tienen stock>0 (o ambos 0), gana el más barato
+                    if pvp < float(existing.get("precio", 1e18)):
+                        ofertas_finales[ean] = {
+                            "sku": row.get("PN"),
+                            "ean": ean,
+                            "precio": pvp,
+                            "stock": qty,
+                            "canon": "0.00",
+                            "iva": "21.00",
+                            "origen": "DMI"
+                        }
+                        dmi_added_or_updated += 1
 
-                        # Si el existente tiene qty=0 y DMI tiene stock>0 -> SÍ sustituir (aunque sea más caro)
-                        if existing_qty == 0 and qty > 0:
-                            ofertas_finales[ean] = {
-                                "sku": row.get("PN"),
-                                "ean": ean,
-                                "precio": pvp,
-                                "stock": qty,
-                                "canon": "0.00",
-                                "iva": "21.00",
-                                "origen": "DMI"
-                            }
-                            continue
+        except:
+            dmi_skipped_parse += 1
+            continue
 
-                        # Si ambos tienen stock>0, gana el más barato
-                        # Si ambos tienen stock=0, también dejamos el más barato (da igual, pero queda coherente)
-                        if pvp < float(existing.get("precio", 1e18)):
-                            ofertas_finales[ean] = {
-                                "sku": row.get("PN"),
-                                "ean": ean,
-                                "precio": pvp,
-                                "stock": qty,
-                                "canon": "0.00",
-                                "iva": "21.00",
-                                "origen": "DMI"
-                            }
-            except:
-                continue
+print(f"[DMI] Total filas: {dmi_total} | Añadidas/actualizadas: {dmi_added_or_updated} | Sin EAN: {dmi_skipped_no_ean} | Categoría no mapeada: {dmi_skipped_no_category} | Error parse: {dmi_skipped_parse}")
 
 # 3. ESCRIBIR RESULTADO
 out_fieldnames = ["sku", "product-id", "product-id-type", "price", "quantity", "state", "update-delete", "canon", "tipo-iva"]
