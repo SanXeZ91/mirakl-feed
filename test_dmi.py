@@ -57,7 +57,7 @@ def test_dmi():
 
 if __name__ == "__main__":
     test_dmi()
-Haz clic en "Commit changes..." para guardar el archivo.
+
 Paso 2: Crear el Workflow de prueba
 Para ejecutar este script, necesitamos un archivo .yml temporal.
 
