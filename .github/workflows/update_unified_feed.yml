@@ -1,0 +1,42 @@
+name: Run Unified Feed
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Generate feed
+        env:
+          COMPUSPAIN_URL: ${{ secrets.COMPUSPAIN_URL }}
+          DMI_USERNAME: ${{ secrets.DMI_USERNAME }}
+          DMI_PASSWORD: ${{ secrets.DMI_PASSWORD }}
+          DMI_APPKEY: ${{ secrets.DMI_APPKEY }}
+        run: python fetch_unified_feed.py
+
+      - name: Publish to docs/
+        run: |
+          mkdir -p docs
+          cp feed_unificado.csv docs/feed_unificado.csv
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/feed_unificado.csv
+          git diff --cached --quiet || git commit -m "Update feed_unificado.csv"
+          git push
