@@ -18,7 +18,7 @@ COMPU_PROMO_ENVIO = 4.50 * IVA_FACTOR # 5.445€ con IVA
 DMI_ENVIO_BASE = 4.95 * IVA_FACTOR
 DMI_GESTION_FIJA = 0.99 * IVA_FACTOR
 
-# ---- CATEGORÍAS Y MÁRGENES (Base unificada para ambos) ----
+# ---- CATEGORÍAS Y MÁRGENES ----
 CATEGORIAS = {
     "CAJA": 0.07, "FUEN": 0.08, "PB": 0.07, "VIDE": 0.07,
     "REFR": 0.12, "MONI": 0.07, "MICR": 0.07, "RATO": 0.12,
@@ -26,9 +26,18 @@ CATEGORIAS = {
 }
 
 MARGENES = {
-    "CAJA": 0.12, "FUEN": 0.09, "PB": 0.06, "VIDE": 0.06,
-    "REFR": 0.10, "MONI": 0.10, "MICR": 0.05, "RATO": 0.15,
-    "TECL": 0.15, "MEMO": 0.06, "MULT": 0.12, "RED": 0.12
+    "CAJA": 0.12,
+    "FUEN": 0.09,
+    "PB": 0.06,
+    "VIDE": 0.06,
+    "REFR": 0.10,
+    "MONI": 0.10,
+    "MICR": 0.05,
+    "RATO": 0.15,
+    "TECL": 0.15,
+    "MEMO": 0.06,
+    "MULT": 0.12,
+    "RED": 0.12
 }
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
@@ -244,43 +253,57 @@ if dmi_text and len(dmi_text) > 100:
                 qty = max(stock - 2, 0)
 
                 if ean not in ofertas_finales:
-                    ofertas_finales[ean] = {
-                        "sku": row.get("PN"),
-                        "ean": ean,
-                        "precio": pvp,
-                        "stock": qty,
-                        "canon": "0.00",
-                        "iva": "21.00",
-                        "origen": "DMI"
-                    }
-                    dmi_added_or_updated += 1
+                    # Producto nuevo, solo añadir si DMI tiene stock
+                    if qty > 0:
+                        ofertas_finales[ean] = {
+                            "sku": row.get("PN"),
+                            "ean": ean,
+                            "precio": pvp,
+                            "stock": qty,
+                            "canon": "0.00",
+                            "iva": "21.00",
+                            "origen": "DMI"
+                        }
+                        dmi_added_or_updated += 1
                 else:
-    existing = ofertas_finales[ean]
-    existing_qty = int(existing.get("stock", 0))
+                    existing = ofertas_finales[ean]
+                    existing_qty = int(existing.get("stock", 0))
 
-    # Si DMI no tiene stock, no tocar lo que ya hay
-    if qty == 0:
-        continue
+                    # Si DMI no tiene stock, no tocar lo que ya hay
+                    if qty == 0:
+                        continue
 
-    # Si DMI tiene stock y CompuSpain no, DMI gana
-    if existing_qty == 0:
-        ofertas_finales[ean] = {
-            "sku": row.get("PN"), "ean": ean, "precio": pvp,
-            "stock": qty, "canon": "0.00", "iva": "21.00", "origen": "DMI"
-        }
-        dmi_added_or_updated += 1
-        continue
+                    # Si DMI tiene stock y el existente no, DMI gana
+                    if existing_qty == 0:
+                        ofertas_finales[ean] = {
+                            "sku": row.get("PN"),
+                            "ean": ean,
+                            "precio": pvp,
+                            "stock": qty,
+                            "canon": "0.00",
+                            "iva": "21.00",
+                            "origen": "DMI"
+                        }
+                        dmi_added_or_updated += 1
+                        continue
 
-    # Ambos tienen stock → gana el más barato
-    if pvp < float(existing.get("precio", 1e18)):
-        ofertas_finales[ean] = {
-            "sku": row.get("PN"), "ean": ean, "precio": pvp,
-            "stock": qty, "canon": "0.00", "iva": "21.00", "origen": "DMI"
-        }
-        dmi_added_or_updated += 1
+                    # Ambos tienen stock → gana el más barato
+                    if pvp < float(existing.get("precio", 1e18)):
+                        ofertas_finales[ean] = {
+                            "sku": row.get("PN"),
+                            "ean": ean,
+                            "precio": pvp,
+                            "stock": qty,
+                            "canon": "0.00",
+                            "iva": "21.00",
+                            "origen": "DMI"
+                        }
+                        dmi_added_or_updated += 1
+
         except Exception as e:
             dmi_skipped_parse += 1
             continue
+
 else:
     print("⚠️ [DMI] El catálogo descargado está vacío o es demasiado corto.")
 
