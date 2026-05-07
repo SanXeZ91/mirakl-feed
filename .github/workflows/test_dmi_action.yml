@@ -19,4 +19,4 @@ jobs:
           DMI_USERNAME: ${{ secrets.DMI_USERNAME }}
           DMI_PASSWORD: ${{ secrets.DMI_PASSWORD }}
           DMI_APPKEY: ${{ secrets.DMI_APPKEY }}
-        run: python test_dmi.py
+        run: python fetch_unified_feed.py
