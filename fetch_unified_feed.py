@@ -161,26 +161,51 @@ dmi_skipped_parse = 0
 dmi_added_or_updated = 0
 
 dmi_text = get_dmi_data()
+print(f"ℹ️ [DMI] Longitud respuesta (chars): {len(dmi_text) if dmi_text else 0}")
 if dmi_text:
-    reader = csv.DictReader(io.StringIO(dmi_text), delimiter=";")
+    lines = dmi_text.splitlines()
+    print(f"ℹ️ [DMI] Nº líneas: {len(lines)}")
+    if lines:
+        print(f"ℹ️ [DMI] Primera línea (cabecera): {lines[0][:200]}")
+        if len(lines) > 1:
+            print(f"ℹ️ [DMI] Segunda línea (primer producto): {lines[1][:200]}")
+            
+if dmi_text and len(dmi_text) > 100: # Verificamos que hay contenido
+    # DETECCION AUTOMATICA DE DELIMITADOR (DMI suele usar ";" pero a veces ",")
+    first_line = dmi_text.split('\n')[0]
+    dmi_delimiter = ";" if ";" in first_line else ","
+    print(f"ℹ️ [DMI] Delimitador detectado: '{dmi_delimiter}'")
+
+    reader = csv.DictReader(io.StringIO(dmi_text), delimiter=dmi_delimiter)
     for row in reader:
         dmi_total += 1
-        ean = normalize_ean(row.get("EAN"))
+        
+        # DMI puede usar 'EAN' o 'Ean', probamos ambos
+        ean_raw = row.get("EAN") or row.get("Ean")
+        ean = normalize_ean(ean_raw)
+        
         if not ean:
             dmi_skipped_no_ean += 1
             continue
 
-        cat_dmi = row.get("Categoría")
+        # DMI puede usar 'Categoría' o 'Category'
+        cat_dmi = row.get("Categoría") or row.get("Category")
         familia = MAPE_DMI.get(cat_dmi)
+        
         if not familia:
             dmi_skipped_no_category += 1
             continue
 
         try:
-            coste_sin_iva = float(row.get("Precio", "0").replace(",", "."))
-            stock = int(float(row.get("Stock Disponible") or 0))
+            # DMI puede usar 'Precio' o 'PriceOnly'
+            precio_raw = row.get("Precio") or row.get("PriceOnly") or "0"
+            coste_sin_iva = float(str(precio_raw).replace(",", "."))
+            
+            # DMI puede usar 'Stock Disponible' o 'Stock'
+            stock_raw = row.get("Stock Disponible") or row.get("Stock") or "0"
+            stock = int(float(str(stock_raw).replace(",", ".")))
 
-            # Transporte DMI (según tu lógica actual)
+            # Transporte DMI
             envio_con_iva = 0 if coste_sin_iva >= 100 else DMI_ENVIO_BASE
             transporte_total = envio_con_iva + DMI_GESTION_FIJA
 
@@ -204,11 +229,9 @@ if dmi_text:
                     existing = ofertas_finales[ean]
                     existing_qty = int(existing.get("stock", 0))
 
-                    # Si DMI queda a 0 y el existente tiene stock>0 -> NO sustituir
                     if qty == 0 and existing_qty > 0:
                         continue
 
-                    # Si el existente tiene 0 y DMI tiene stock>0 -> sustituir (aunque sea más caro)
                     if existing_qty == 0 and qty > 0:
                         ofertas_finales[ean] = {
                             "sku": row.get("PN"),
@@ -222,7 +245,6 @@ if dmi_text:
                         dmi_added_or_updated += 1
                         continue
 
-                    # Si ambos tienen stock>0 (o ambos 0), gana el más barato
                     if pvp < float(existing.get("precio", 1e18)):
                         ofertas_finales[ean] = {
                             "sku": row.get("PN"),
@@ -234,10 +256,11 @@ if dmi_text:
                             "origen": "DMI"
                         }
                         dmi_added_or_updated += 1
-
-        except:
+        except Exception as e:
             dmi_skipped_parse += 1
             continue
+else:
+    print("⚠️ [DMI] El catálogo descargado está vacío o es demasiado corto.")
 
 print(f"[DMI] Total filas: {dmi_total} | Añadidas/actualizadas: {dmi_added_or_updated} | Sin EAN: {dmi_skipped_no_ean} | Categoría no mapeada: {dmi_skipped_no_category} | Error parse: {dmi_skipped_parse}")
 
