@@ -122,15 +122,20 @@ if compu_url:
                 coste = float(coste_str)
                 stock = int(float(row.get("ARTSTOCKDISPONIBLE") or 0))
                 pvp = calcular_pvp(coste, COMPU_PROMO_ENVIO, familia)
-                
-                if pvp and stock > 2:
+
+                if pvp:
+                    qty = max(stock - 2, 0)
                     ofertas_finales[ean] = {
-                        "sku": row.get("ARTPARTNUMBER"), "ean": ean, "precio": pvp, 
-                        "stock": stock - 2, "canon": row.get("ARTRECURSOIMPORTE", "0"),
+                        "sku": row.get("ARTPARTNUMBER"),
+                        "ean": ean,
+                        "precio": pvp,
+                        "stock": qty,
+                        "canon": row.get("ARTRECURSOIMPORTE", "0"),
                         "iva": row.get("ARTIVAREQUIVALENCIA", "21"),
                         "origen": "CompuSpain"
                     }
-            except: continue
+            except:
+                continue
 
 # 2. PROCESAR DMI (Y COMPARAR)
 dmi_text = get_dmi_data()
@@ -140,26 +145,71 @@ if dmi_text:
         ean = normalize_ean(row.get("EAN"))
         cat_dmi = row.get("Categoría")
         familia = MAPE_DMI.get(cat_dmi)
-        
+
         if ean and familia:
             try:
                 coste_sin_iva = float(row.get("Precio", "0").replace(",", "."))
-                # Cálculo transporte DMI
-                envio = 0 if (coste_sin_iva * IVA_FACTOR) >= 100 else DMI_ENVIO_BASE
-                transporte_total = envio + DMI_GESTION_FIJA
-                
-                pvp = calcular_pvp(coste_sin_iva * IVA_FACTOR, transporte_total, familia)
                 stock = int(float(row.get("Stock Disponible") or 0))
-                
-                if pvp and stock > 2:
-                    # REGLA: Si no existe o si el de DMI es más barato, ganamos
-                    if ean not in ofertas_finales or pvp < ofertas_finales[ean]["precio"]:
+
+                # Cálculo transporte DMI:
+                # - envío 4,95€ + IVA si coste < 100€
+                # - envío gratis si coste >= 100€
+                # - gestión fija 0,99€ + IVA siempre
+                envio_con_iva = 0 if coste_sin_iva >= 100 else DMI_ENVIO_BASE
+                transporte_total = envio_con_iva + DMI_GESTION_FIJA
+
+                pvp = calcular_pvp(coste_sin_iva * IVA_FACTOR, transporte_total, familia)
+
+                if pvp:
+                    qty = max(stock - 2, 0)
+
+                    if ean not in ofertas_finales:
+                        # No existe aún: guardamos DMI (aunque qty sea 0, para no perder referencias)
                         ofertas_finales[ean] = {
-                            "sku": row.get("PN"), "ean": ean, "precio": pvp,
-                            "stock": stock - 2, "canon": "0.00", "iva": "21.00",
+                            "sku": row.get("PN"),
+                            "ean": ean,
+                            "precio": pvp,
+                            "stock": qty,
+                            "canon": "0.00",
+                            "iva": "21.00",
                             "origen": "DMI"
                         }
-            except: continue
+                    else:
+                        existing = ofertas_finales[ean]
+                        existing_qty = int(existing.get("stock", 0))
+
+                        # Regla para NO perder ventas:
+                        # - Si DMI queda con qty=0 y el existente tiene stock>0 -> NO sustituir
+                        if qty == 0 and existing_qty > 0:
+                            continue
+
+                        # Si el existente tiene qty=0 y DMI tiene stock>0 -> SÍ sustituir (aunque sea más caro)
+                        if existing_qty == 0 and qty > 0:
+                            ofertas_finales[ean] = {
+                                "sku": row.get("PN"),
+                                "ean": ean,
+                                "precio": pvp,
+                                "stock": qty,
+                                "canon": "0.00",
+                                "iva": "21.00",
+                                "origen": "DMI"
+                            }
+                            continue
+
+                        # Si ambos tienen stock>0, gana el más barato
+                        # Si ambos tienen stock=0, también dejamos el más barato (da igual, pero queda coherente)
+                        if pvp < float(existing.get("precio", 1e18)):
+                            ofertas_finales[ean] = {
+                                "sku": row.get("PN"),
+                                "ean": ean,
+                                "precio": pvp,
+                                "stock": qty,
+                                "canon": "0.00",
+                                "iva": "21.00",
+                                "origen": "DMI"
+                            }
+            except:
+                continue
 
 # 3. ESCRIBIR RESULTADO
 out_fieldnames = ["sku", "product-id", "product-id-type", "price", "quantity", "state", "update-delete", "canon", "tipo-iva"]
