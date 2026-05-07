@@ -90,11 +90,10 @@ def get_dmi_data():
         print("📥 [DMI] Descargando catálogo...")
         catalog_url = "https://api.dmi.es/api/v2/products/CustomCatalog"
         payload = {
-            "FileFormat": "csv",
-            "Columns": ["PN", "Ean", "Category", "Stock", "PriceOnly"],
-            "Separator": ";",
-            "ReturnFileDirectly": True,
-        }
+        "FileFormat": "csv",
+        "Separator": ";",
+        "ReturnFileDirectly": True
+    }
         headers["Authorization"] = f"Bearer {token}"
         r_cat = requests.post(catalog_url, json=payload, headers=headers, timeout=60)
         print(f"ℹ️ [DMI] Status catálogo: {r_cat.status_code}")
