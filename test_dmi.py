@@ -57,33 +57,3 @@ def test_dmi():
 
 if __name__ == "__main__":
     test_dmi()
-
-Paso 2: Crear el Workflow de prueba
-Para ejecutar este script, necesitamos un archivo .yml temporal.
-
-Ve a la carpeta .github/workflows/ en tu repo.
-Crea un archivo nuevo llamado test_dmi_action.yml y pega esto:
-yaml
-Copy
-name: Test DMI Connection
-
-on:
-  workflow_dispatch: # Esto nos permite darle al botón "Play" manualmente
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: pip install requests
-      - name: Run Test
-        env:
-          DMI_USERNAME: ${{ secrets.DMI_USERNAME }}
-          DMI_PASSWORD: ${{ secrets.DMI_PASSWORD }}
-          DMI_APPKEY: ${{ secrets.DMI_APPKEY }}
-        run: python test_dmi.py
