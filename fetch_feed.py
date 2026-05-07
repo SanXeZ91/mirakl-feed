@@ -132,17 +132,17 @@ CATEGORIAS = {
 
 MARGENES = {
     "CAJA": 0.12,
-    "FUEN": 0.10,
-    "PB": 0.08,
-    "VIDE": 0.08,
-    "REFR": 0.12,
+    "FUEN": 0.09,
+    "PB": 0.06,
+    "VIDE": 0.06,
+    "REFR": 0.10,
     "MONI": 0.10,
-    "MICR": 0.06,
-    "RATO": 0.16,
-    "TECL": 0.16,
-    "MEMO": 0.08,
+    "MICR": 0.05,
+    "RATO": 0.15,
+    "TECL": 0.15,
+    "MEMO": 0.06,
     "MULT": 0.12,
-    "RED": 0.14,
+    "RED": 0.12,
 }
 
 REQUIRED_INPUT_COLS = [
