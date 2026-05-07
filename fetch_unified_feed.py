@@ -33,13 +33,29 @@ MARGENES = {
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
 MAPE_DMI = {
+    # PLACAS BASE
     "Placas base": "PB",
+
+    # TARJETAS GRÁFICAS
     "Tarjetas": "VIDE",
+
+    # REFRIGERACIÓN
     "Refrigeración": "REFR",
+
+    # PROCESADORES
     "Procesadores": "MICR",
+
+    # PERIFÉRICOS (ratones, teclados, etc.)
     "Periféricos": "RATO",
+
+    # MEMORIA RAM
     "Memoria RAM": "MEMO",
-    "Routers y Modems": "RED"
+
+    # RED
+    "Routers y Modems": "RED",
+    "Repetidores y extensores": "RED",
+    "Switches y Transceptores": "RED",
+    "Wifi": "RED"
 }
 
 def fmt_precio(x):
