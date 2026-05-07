@@ -82,26 +82,40 @@ def get_dmi_data():
         "password": os.environ.get("DMI_PASSWORD")
     }
     headers = {"x-api-key": os.environ.get("DMI_APPKEY"), "Content-Type": "application/json"}
-    
+
     try:
         r = requests.post(auth_url, json=creds, headers=headers, timeout=30)
-        token = r.json().get("token")
+        print(f"ℹ️ [DMI] Status autenticación: {r.status_code}")
         
+        auth_json = r.json()
+        token = auth_json.get("token")
+        
+        if not token:
+            print(f"❌ [DMI] No se obtuvo token. Respuesta auth: {str(auth_json)[:300]}")
+            return ""
+        
+        print(f"✅ [DMI] Token obtenido correctamente (primeros 20 chars): {token[:20]}...")
+
         print("📥 [DMI] Descargando catálogo...")
         catalog_url = "https://api.dmi.es/api/v2/products/CustomCatalog"
         payload = {
-        "FileFormat": "csv",
-        "Separator": ";",
-        "ReturnFileDirectly": True
-    }
+            "FileFormat": "csv",
+            "Separator": ";",
+            "ReturnFileDirectly": True
+        }
         headers["Authorization"] = f"Bearer {token}"
         r_cat = requests.post(catalog_url, json=payload, headers=headers, timeout=60)
         print(f"ℹ️ [DMI] Status catálogo: {r_cat.status_code}")
+        
+        if r_cat.status_code != 200:
+            print(f"❌ [DMI] Error catálogo: {r_cat.text[:300]}")
+            return ""
+        
         return r_cat.text
     except Exception as e:
         print(f"❌ [ERROR DMI] {e}")
         return ""
-
+        
 # ---- PROCESAMIENTO PRINCIPAL ----
 ofertas_finales = {} 
 
