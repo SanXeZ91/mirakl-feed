@@ -1,7 +1,7 @@
 name: Test DMI Connection
 
 on:
-  workflow_dispatch: # Esto nos permite darle al botón "Play" manualmente
+  workflow_dispatch:
 
 jobs:
   test:
@@ -14,9 +14,24 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install requests
-      - name: Run Test
+      - name: Run Unified Feed
         env:
+          COMPUSPAIN_URL: ${{ secrets.COMPUSPAIN_URL }}
           DMI_USERNAME: ${{ secrets.DMI_USERNAME }}
           DMI_PASSWORD: ${{ secrets.DMI_PASSWORD }}
           DMI_APPKEY: ${{ secrets.DMI_APPKEY }}
         run: python fetch_unified_feed.py
+
+      - name: Preview feed_unificado.csv
+        run: |
+          echo "---- Primeras 5 líneas ----"
+          head -n 5 feed_unificado.csv || true
+          echo "---- Total líneas ----"
+          wc -l feed_unificado.csv || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feed_unificado
+          path: feed_unificado.csv
+          if-no-files-found: error
