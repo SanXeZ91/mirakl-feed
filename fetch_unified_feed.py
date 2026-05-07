@@ -81,7 +81,11 @@ def get_dmi_data():
         "username": os.environ.get("DMI_USERNAME"),
         "password": os.environ.get("DMI_PASSWORD")
     }
-    headers = {"x-api-key": os.environ.get("DMI_APPKEY"), "Content-Type": "application/json"}
+    app_key = os.environ.get("DMI_APPKEY")
+    headers = {
+        "x-api-key": app_key,
+        "Content-Type": "application/json"
+    }
 
     try:
         r = requests.post(auth_url, json=creds, headers=headers, timeout=30)
@@ -91,26 +95,61 @@ def get_dmi_data():
         token = auth_json.get("token")
         
         if not token:
-            print(f"❌ [DMI] No se obtuvo token. Respuesta auth: {str(auth_json)[:300]}")
+            print(f"❌ [DMI] No se obtuvo token. Respuesta: {str(auth_json)[:300]}")
             return ""
         
-        print(f"✅ [DMI] Token obtenido correctamente (primeros 20 chars): {token[:20]}...")
+        print(f"✅ [DMI] Token obtenido correctamente.")
 
         print("📥 [DMI] Descargando catálogo...")
-        catalog_url = "https://api.dmi.es/api/v2/products/catalog"
+        catalog_url = "https://api.dmi.es/api/v2/products/CustomCatalog"
         payload = {
-        "fileFormat": "csv",
-        "separator": ";",
-        "returnFileDirectly": True
-    }
-        headers["Authorization"] = f"Bearer {token}"
-        r_cat = requests.post(catalog_url, json=payload, headers=headers, timeout=60)
+            "FileFormat": "csv",
+            "Columns": [
+                "ProductId",
+                "ManufacturerCode",
+                "Ean",
+                "Category",
+                "Manufacturer",
+                "Name",
+                "Stock",
+                "PriceOnly"
+            ],
+            "Encoding": "UTF-8",
+            "Separator": ";",
+            "SubSeparator": "|",
+            "FieldSeparator": "=",
+            "ColumnNames": {
+                "ProductId": "Código de Producto",
+                "ManufacturerCode": "PN",
+                "Ean": "EAN",
+                "Category": "Categoría",
+                "Manufacturer": "Fabricante",
+                "Name": "Nombre",
+                "Stock": "Stock Disponible",
+                "PriceOnly": "Precio"
+            },
+            "OutputFileName": "catalogo_personalizado",
+            "ReturnFileDirectly": True,
+            "Page": 1,
+            "PageSize": 1000000,
+            "Currency": "EUR",
+            "Language": "es"
+        }
+
+        # IMPORTANTE: x-api-key también en la llamada al catálogo
+        catalog_headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "x-api-key": app_key
+        }
+
+        r_cat = requests.post(catalog_url, json=payload, headers=catalog_headers, timeout=120)
         print(f"ℹ️ [DMI] Status catálogo: {r_cat.status_code}")
-        
+
         if r_cat.status_code != 200:
             print(f"❌ [DMI] Error catálogo: {r_cat.text[:300]}")
             return ""
-        
+
         return r_cat.text
     except Exception as e:
         print(f"❌ [ERROR DMI] {e}")
