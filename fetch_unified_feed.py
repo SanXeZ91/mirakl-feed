@@ -26,15 +26,15 @@ CATEGORIAS = {
 }
 
 MARGENES = {
-    "CAJA": 0.12,
-    "FUEN": 0.09,
+    "CAJA": 0.11,
+    "FUEN": 0.08,
     "PB": 0.06,
     "VIDE": 0.06,
-    "REFR": 0.10,
+    "REFR": 0.08,
     "MONI": 0.10,
     "MICR": 0.05,
-    "RATO": 0.15,
-    "TECL": 0.15,
+    "RATO": 0.14,
+    "TECL": 0.14,
     "MEMO": 0.06,
     "MULT": 0.12,
     "RED": 0.12
