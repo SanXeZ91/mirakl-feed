@@ -70,7 +70,7 @@ def normalize_ean(value):
     return re.sub(r"\D+", "", s)
 
 # -------------------------
-# Nueva función: parse_amount
+# Función: parse_amount
 # -------------------------
 def parse_amount(s):
     """
@@ -228,10 +228,6 @@ if compu_url:
             stock = int(float(row.get("ARTSTOCKDISPONIBLE") or 0))
             pvp = calcular_pvp(coste, COMPU_PROMO_ENVIO, familia)
 
-            # DEBUG para familias con posibles problemas
-            if familia in ("VIDE", "RATO", "RED"):
-                print(f"🔍 DEBUG COMPUSPAIN [{familia}] SKU={row.get('ARTPARTNUMBER')} | raw_coste='{coste_raw}' -> coste_parsed={coste} | transporte={COMPU_PROMO_ENVIO} | pvp={pvp}")
-
             if pvp:
                 qty = max(stock - 2, 0)
                 ofertas_finales[ean] = {
@@ -239,14 +235,13 @@ if compu_url:
                     "ean": ean,
                     "precio": pvp,
                     "stock": qty,
-                    "canon": row.get("ARTRECURSOIMPORTE", "0"),
-                    "iva": row.get("ARTIVAREQUIVALENCIA", "21"),
+                    "canon": 0.0,
+                    "iva": 21.0,
                     "origen": "CompuSpain"
                 }
                 compu_added += 1
         except Exception as e:
             compu_skipped_parse += 1
-            # opcional: print(f"DEBUG compu parse error: {e}")
             continue
 
 print(f"[COMPUSPAIN] Total filas: {compu_total} | Añadidas: {compu_added} | Sin EAN: {compu_skipped_no_ean} | Familia no válida: {compu_skipped_no_family} | Error parse: {compu_skipped_parse}")
@@ -286,7 +281,6 @@ if dmi_text and len(dmi_text) > 100:
 
         try:
             precio_raw = row.get("Precio") or row.get("PriceOnly") or "0"
-            # CAMBIO: parse seguro del precio (puede venir con separador de miles)
             coste_sin_iva = parse_amount(precio_raw)
 
             stock_raw = row.get("Stock Disponible") or row.get("Stock") or "0"
@@ -297,10 +291,6 @@ if dmi_text and len(dmi_text) > 100:
 
             coste_con_iva = coste_sin_iva * IVA_FACTOR
             pvp = calcular_pvp(coste_con_iva, transporte_total, familia)
-
-            # Logs de depuración para las categorías problemáticas
-            if familia in ("VIDE", "RATO", "RED"):
-                print(f"🔍 DEBUG DMI [{familia}] PN={row.get('PN')} | raw_precio='{precio_raw}' -> coste_sin_iva={coste_sin_iva} | transporte_total={transporte_total} | coste_con_iva={coste_con_iva} | pvp={pvp}")
 
             if pvp:
                 qty = max(stock - 2, 0)
@@ -313,8 +303,8 @@ if dmi_text and len(dmi_text) > 100:
                             "ean": ean,
                             "precio": pvp,
                             "stock": qty,
-                            "canon": "0.00",
-                            "iva": "21.00",
+                            "canon": 0.0,
+                            "iva": 21.0,
                             "origen": "DMI"
                         }
                         dmi_added_or_updated += 1
@@ -333,8 +323,8 @@ if dmi_text and len(dmi_text) > 100:
                             "ean": ean,
                             "precio": pvp,
                             "stock": qty,
-                            "canon": "0.00",
-                            "iva": "21.00",
+                            "canon": 0.0,
+                            "iva": 21.0,
                             "origen": "DMI"
                         }
                         dmi_added_or_updated += 1
@@ -347,15 +337,14 @@ if dmi_text and len(dmi_text) > 100:
                             "ean": ean,
                             "precio": pvp,
                             "stock": qty,
-                            "canon": "0.00",
-                            "iva": "21.00",
+                            "canon": 0.0,
+                            "iva": 21.0,
                             "origen": "DMI"
                         }
                         dmi_added_or_updated += 1
 
         except Exception as e:
             dmi_skipped_parse += 1
-            # opcional: print(f"DEBUG dmi parse error: {e}")
             continue
 
 else:
