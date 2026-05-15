@@ -33,8 +33,8 @@ MARGENES = {
     "REFR": 0.08,
     "MONI": 0.10,
     "MICR": 0.05,
-    "RATO": 0.14,
-    "TECL": 0.14,
+    "RATO": 0.12,
+    "TECL": 0.12,
     "MEMO": 0.06,
     "MULT": 0.12,
     "RED": 0.12
