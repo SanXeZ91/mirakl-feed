@@ -26,18 +26,18 @@ CATEGORIAS = {
 }
 
 MARGENES = {
-    "CAJA": 0.11,
-    "FUEN": 0.08,
-    "PB": 0.06,
-    "VIDE": 0.06,
-    "REFR": 0.08,
-    "MONI": 0.10,
+    "CAJA": 0.10,
+    "FUEN": 0.07,
+    "PB": 0.05,
+    "VIDE": 0.05,
+    "REFR": 0.07,
+    "MONI": 0.08,
     "MICR": 0.05,
-    "RATO": 0.12,
-    "TECL": 0.12,
-    "MEMO": 0.06,
-    "MULT": 0.12,
-    "RED": 0.12
+    "RATO": 0.10,
+    "TECL": 0.10,
+    "MEMO": 0.05,
+    "MULT": 0.10,
+    "RED": 0.10
 }
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
