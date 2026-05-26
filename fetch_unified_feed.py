@@ -22,7 +22,8 @@ DMI_GESTION_FIJA = 0.99 * IVA_FACTOR
 CATEGORIAS = {
     "CAJA": 0.07, "FUEN": 0.08, "PB": 0.07, "VIDE": 0.07,
     "REFR": 0.12, "MONI": 0.07, "MICR": 0.07, "RATO": 0.12,
-    "TECL": 0.12, "MEMO": 0.07, "MULT": 0.07, "RED": 0.07
+    "TECL": 0.12, "MEMO": 0.07, "MULT": 0.07, "RED": 0.07, "ACCE": 0.15,
+    "ADAP": 0.15, "CABL": 0.15, "CONS": 0.12, "ELEC": 0.15,
 }
 
 MARGENES = {
@@ -37,7 +38,12 @@ MARGENES = {
     "TECL": 0.08,
     "MEMO": 0.04,
     "MULT": 0.08,
-    "RED": 0.10
+    "RED": 0.10,
+    "ACCE": 0.12,
+    "ADAP": 0.12,
+    "CABL": 0.12,
+    "CONS": 0.12,
+    "ELEC": 0.12,
 }
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
@@ -51,7 +57,18 @@ MAPE_DMI = {
     "Routers y Modems": "RED",
     "Repetidores y extensores": "RED",
     "Switches y Transceptores": "RED",
-    "Wifi": "RED"
+    "Wifi": "RED",
+    "Accesorios portátiles": "ACCE",
+    "Adaptadores y Convertidores": "ADAP",
+    "Altavoces": "MULT",
+    "Auriculares": "MULT",
+    "Cables y Conectores": "CABL",
+    "Cajas y fuentes": "FUEN",
+    "Consumibles": "CONS",
+    "Cuidado personal": "ELEC",
+    "Micrófonos": "MULT",
+    "Pequeños electrodomésticos": "ELEC",
+    
 }
 
 def fmt_precio(x):
