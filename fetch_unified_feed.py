@@ -22,28 +22,28 @@ DMI_GESTION_FIJA = 0.99 * IVA_FACTOR
 CATEGORIAS = {
     "CAJA": 0.07, "FUEN": 0.08, "PB": 0.07, "VIDE": 0.07,
     "REFR": 0.12, "MONI": 0.07, "MICR": 0.07, "RATO": 0.12,
-    "TECL": 0.12, "MEMO": 0.07, "MULT": 0.07, "RED": 0.07, "ACCE": 0.15,
+    "TECL": 0.12, "MEMO": 0.07, "MULT": 0.15, "RED": 0.07, "ACCE": 0.15,
     "ADAP": 0.15, "CABL": 0.15, "CONS": 0.12, "ELEC": 0.15,
 }
 
 MARGENES = {
-    "CAJA": 0.10,
+    "CAJA": 0.09,
     "FUEN": 0.06,
     "PB": 0.04,
     "VIDE": 0.04,
     "REFR": 0.05,
     "MONI": 0.05,
     "MICR": 0.04,
-    "RATO": 0.07,
-    "TECL": 0.07,
+    "RATO": 0.06,
+    "TECL": 0.06,
     "MEMO": 0.04,
     "MULT": 0.07,
-    "RED": 0.08,
-    "ACCE": 0.10,
-    "ADAP": 0.10,
-    "CABL": 0.10,
-    "CONS": 0.10,
-    "ELEC": 0.10,
+    "RED": 0.07,
+    "ACCE": 0.09,
+    "ADAP": 0.09,
+    "CABL": 0.08,
+    "CONS": 0.08,
+    "ELEC": 0.09,
 }
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
