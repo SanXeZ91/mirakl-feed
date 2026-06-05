@@ -310,7 +310,7 @@ if dmi_text and len(dmi_text) > 100:
             pvp = calcular_pvp(coste_con_iva, transporte_total, familia)
 
             if pvp:
-                qty = max(stock - 1, 0)
+                qty = max(stock - 4, 0)
 
                 if ean not in ofertas_finales:
                     # Producto nuevo, solo añadir si DMI tiene stock
