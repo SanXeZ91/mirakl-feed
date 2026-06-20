@@ -27,23 +27,23 @@ CATEGORIAS = {
 }
 
 MARGENES = {
-    "CAJA": 0.08,
+    "CAJA": 0.06,
     "FUEN": 0.05,
-    "PB": 0.04,
-    "VIDE": 0.04,
-    "REFR": 0.05,
+    "PB": 0.03,
+    "VIDE": 0.03,
+    "REFR": 0.04,
     "MONI": 0.05,
-    "MICR": 0.04,
-    "RATO": 0.06,
-    "TECL": 0.06,
+    "MICR": 0.03,
+    "RATO": 0.05,
+    "TECL": 0.05,
     "MEMO": 0.04,
-    "MULT": 0.07,
+    "MULT": 0.06,
     "RED": 0.07,
-    "ACCE": 0.08,
-    "ADAP": 0.08,
-    "CABL": 0.08,
-    "CONS": 0.08,
-    "ELEC": 0.08,
+    "ACCE": 0.07,
+    "ADAP": 0.07,
+    "CABL": 0.07,
+    "CONS": 0.07,
+    "ELEC": 0.07,
 }
 
 # MAPEO DE DMI -> NUESTRAS CATEGORÍAS
